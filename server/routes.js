@@ -33,7 +33,8 @@ router.get('/', (req, res) => {
         ON r.id = photo.review_id
     WHERE r.product_id = ${productId} AND r.reported = false
     GROUP BY r.id
-    ${sortParameter ? `ORDER BY ${sortMap[sortParameter]}` : '' };`
+    ${sortParameter ? `ORDER BY ${sortMap[sortParameter]}` : '' }
+    ${`LIMIT ${count}`} ${`OFFSET ${count * (page - 1)}`};`
 
   client.query(sqlQuery, (err, data) => {
       if (err) {
