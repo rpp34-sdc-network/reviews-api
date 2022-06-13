@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const { Client } = require('pg');
+const format = require('pg-format');
+
 require('dotenv').config();
 
 const client = new Client({
@@ -33,23 +35,23 @@ router.get('/', (req, res) => {
         ON r.id = photo.review_id
     WHERE r.product_id = ${productId} AND r.reported = false
     GROUP BY r.id
-    ${sortParameter ? `ORDER BY ${sortMap[sortParameter]}` : '' }
+    ${sortParameter ? `ORDER BY ${sortMap[sortParameter]}` : ''}
     ${`LIMIT ${count}`} ${`OFFSET ${count * (page - 1)}`};`
 
   client.query(sqlQuery, (err, data) => {
-      if (err) {
-        res.status(500).json(err);
-      } else {
-        const reviewsData = {
-          product: productId,
-          page: page,
-          count: count
-        }
-        const results = data.rows;
-        reviewsData['results'] = results;
-        res.json(reviewsData);
+    if (err) {
+      res.status(500).json(err);
+    } else {
+      const reviewsData = {
+        product: productId,
+        page: page,
+        count: count
       }
-    })
+      const results = data.rows;
+      reviewsData['results'] = results;
+      res.json(reviewsData);
+    }
+  })
 });
 
 router.get('/meta', (req, res) => {
@@ -69,6 +71,7 @@ router.get('/meta', (req, res) => {
       for (let key in ratings) {
         stringifiedRatings[key] = ratings[key].toString();
       };
+
       const recommendedSqlQuery = `SELECT r.recommend, r.id FROM review AS r WHERE product_id = ${productId} AND r.reported = false;`;
       client.query(recommendedSqlQuery, (err, data) => {
         if (err) {
@@ -86,7 +89,7 @@ router.get('/meta', (req, res) => {
             } else {
               const characteristicsData = data.rows;
               const characteristics = characteristicsData.reduce((acc, cur) => {
-                acc[cur.name] = {'id': cur.id, 'value': cur.value}
+                acc[cur.name] = { 'id': cur.id, 'value': cur.value }
                 return acc;
               }, {});
               const productMetadata = {
@@ -104,6 +107,35 @@ router.get('/meta', (req, res) => {
   })
 });
 
+
+router.post('/', (req, res) => {
+  const { product_id, rating, summary, body, recommend, name, email, photos, characteristics } = req.body;
+  const date = new Date();
+  const currentTime = date.getTime();
+  const createReviewQuery = `INSERT INTO review(product_id, rating, date, summary, body, recommend, reported, reviewer_name, reviewer_email, response, helpfulness) VALUES (${product_id}, ${rating}, ${currentTime}, '${summary.replace("'", "''") || null}', '${body.replace("'", "''")}', ${recommend}, false, '${name.replace("'", "''")}', '${email.replace("'", "''")}', null, 0) RETURNING review.id;`
+  client.query(createReviewQuery, (err, data) => {
+    if (err) {
+      res.status(500).send(err);
+    } else {
+      const reviewId = data.rows[0].id;
+      const photoData = photos.map((photo) => {
+        return [reviewId, `"${photo}"`];
+      });
+      const createPhotoQuery = 'INSERT INTO photo(review_id, photo_url) VALUES %L';
+      client.query(format(createPhotoQuery, photoData), (err, data) => {
+        if (err) {
+          res.status(500).send(err);
+        } else {
+          res.send(data);
+        }
+      })
+    }
+  })
+});
+
 module.exports = router;
 
+// client.query(format('INSERT INTO review(id,product_id,rating,date,summary,body,recommend,reported,reviewer_name,reviewer_email,response,helpfulness) VALUES %L', data))
+// insert into review(product_id, rating, date, summary, body, recommend, reported, reviewer_name, reviewer_email, response, helpfulness) values (6969420, 4, 1655100546338, 'this is a test summary', 'this is a test body. Do you think its nice?', true, false, 'sponge Roberto', 'spongeRob@gmail.com', null, 0);
 
+// insert into review(product_id, rating, date, summary, body, recommend, reported, reviewer_name, reviewer_email, response, helpfulness) values (12345, 5, 1591525764102, 'test summary text', 'this is a longer test body', false, false, 'danny boy', 'danielsouthrard12@gmail.com', 'thanks for the input', 15);

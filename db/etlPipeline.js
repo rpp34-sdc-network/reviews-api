@@ -18,29 +18,29 @@ client.connect();
 
 
 // TABLE characteristic
-async function addCharacteristicDataAsync(data) {
-    await client.query(format('INSERT INTO characteristic(id, product_id, name) VALUES %L', data));
-}
+// async function addCharacteristicDataAsync(data) {
+//     await client.query(format('INSERT INTO characteristic(id, product_id, name) VALUES %L', data));
+// }
 
-let characteristicResults = [];
+// let characteristicResults = [];
 
-fs.createReadStream('/Users/dereksouthard/Downloads/characteristics.csv')
-  .pipe(parse({ delimeter: ',', from_line: 1 }))
-  .on('data', (row) => {
-    characteristicResults.push(row);
-    if (characteristicResults.length === 100) {
-      addCharacteristicDataAsync(characteristicResults);
-      characteristicResults = [];
-    }
-  })
-  .on('end', () => {
-    addCharacteristicDataAsync(characteristicResults);
-    characteristicResults = [];
-    console.log('done!');
-  })
-  .on('error', (err) => {
-    console.log('an error occured: ', err);
-  });
+// fs.createReadStream('/Users/dereksouthard/Downloads/characteristics.csv')
+//   .pipe(parse({ delimeter: ',', from_line: 1 }))
+//   .on('data', (row) => {
+//     characteristicResults.push(row);
+//     if (characteristicResults.length === 100) {
+//       addCharacteristicDataAsync(characteristicResults);
+//       characteristicResults = [];
+//     }
+//   })
+//   .on('end', () => {
+//     addCharacteristicDataAsync(characteristicResults);
+//     characteristicResults = [];
+//     console.log('done!');
+//   })
+//   .on('error', (err) => {
+//     console.log('an error occured: ', err);
+//   });
 
 
 // TABLE reviews
@@ -105,3 +105,4 @@ fs.createReadStream('/Users/dereksouthard/Downloads/characteristics.csv')
 // addCsvDataToDb('characteristics.csv', 'characteristic', ['id', 'product_id', 'name']);
 
 // Client.disconnect();
+
