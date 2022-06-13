@@ -126,7 +126,18 @@ router.post('/', (req, res) => {
         if (err) {
           res.status(500).send(err);
         } else {
-          res.send(data);
+          const characteristicReviewsValues = [];
+          for (let key in characteristics) {
+            characteristicReviewsValues.push([key, reviewId, characteristics[key]]);
+          }
+          const createCharacteristicsQuery = `INSERT INTO characteristic_reviews(characteristic_id, review_id, value) VALUES %L`;
+          client.query(format(createCharacteristicsQuery, characteristicReviewsValues), (err, data) => {
+            if (err) {
+              res.status(500).send(err);
+            } else {
+              res.send(data);
+            }
+          })
         }
       })
     }
@@ -134,8 +145,3 @@ router.post('/', (req, res) => {
 });
 
 module.exports = router;
-
-// client.query(format('INSERT INTO review(id,product_id,rating,date,summary,body,recommend,reported,reviewer_name,reviewer_email,response,helpfulness) VALUES %L', data))
-// insert into review(product_id, rating, date, summary, body, recommend, reported, reviewer_name, reviewer_email, response, helpfulness) values (6969420, 4, 1655100546338, 'this is a test summary', 'this is a test body. Do you think its nice?', true, false, 'sponge Roberto', 'spongeRob@gmail.com', null, 0);
-
-// insert into review(product_id, rating, date, summary, body, recommend, reported, reviewer_name, reviewer_email, response, helpfulness) values (12345, 5, 1591525764102, 'test summary text', 'this is a longer test body', false, false, 'danny boy', 'danielsouthrard12@gmail.com', 'thanks for the input', 15);
