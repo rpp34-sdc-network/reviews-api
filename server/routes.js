@@ -157,4 +157,17 @@ router.put('/:review_id/helpful', (req, res) => {
   });
 });
 
+
+router.put('/:review_id/report', (req, res) => {
+  const reviewId = req.params.review_id;
+  const reportReviewQuery = `UPDATE review SET reported = true WHERE id = ${reviewId}`;
+  client.query(reportReviewQuery, (err, data) => {
+    if (err) {
+      res.status(500).send(err);
+    } else {
+      res.status(204).end();
+    }
+  });
+});
+
 module.exports = router;
