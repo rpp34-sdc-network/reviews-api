@@ -135,13 +135,26 @@ router.post('/', (req, res) => {
             if (err) {
               res.status(500).send(err);
             } else {
-              res.send(data);
+              res.status(201).send('review created successfully');
             }
           })
         }
       })
     }
   })
+});
+
+
+router.put('/:review_id/helpful', (req, res) => {
+  const reviewId = req.params.review_id;
+  const updateHelpfulnessQuery = `UPDATE review SET helpfulness = helpfulness + 1 WHERE id = ${reviewId}`;
+  client.query(updateHelpfulnessQuery, (err, data) => {
+    if (err) {
+      res.status(500).send(err);
+    } else {
+      res.status(204).end();
+    }
+  });
 });
 
 module.exports = router;
