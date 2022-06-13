@@ -4,7 +4,9 @@
   "description": "",
   "main": "mongoSchema.js",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "dev": "nodemon server",
+    "start": "node server"
   },
   "repository": {
     "type": "git",
@@ -29,6 +31,7 @@
     "promise-streams": "^2.1.1"
   },
   "devDependencies": {
-    "jest": "^28.1.0"
+    "jest": "^28.1.0",
+    "nodemon": "^2.0.16"
   }
 }
