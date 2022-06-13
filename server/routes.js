@@ -42,15 +42,68 @@ router.get('/', (req, res) => {
       } else {
         const reviewsData = {
           product: productId,
-          page: 0,
-          count: 5
+          page: page,
+          count: count
         }
         const results = data.rows;
         reviewsData['results'] = results;
         res.json(reviewsData);
       }
+    })
+});
+
+router.get('/meta', (req, res) => {
+  const productId = req.query.product_id;
+  const ratingsSqlQuery = `SELECT r.rating, r.id FROM review AS r WHERE product_id = ${productId} AND r.reported = false;`;
+  client.query(ratingsSqlQuery, (err, data) => {
+    if (err) {
+      res.status(500).json(err);
+    } else {
+      const ratingsData = data.rows;
+      const ratings = ratingsData.reduce((acc, cur) => {
+        acc[cur.rating] = acc[cur.rating] ? acc[cur.rating] + 1 : 1;
+        return acc;
+      }, {});
+
+      const stringifiedRatings = {};
+      for (let key in ratings) {
+        stringifiedRatings[key] = ratings[key].toString();
+      };
+      const recommendedSqlQuery = `SELECT r.recommend, r.id FROM review AS r WHERE product_id = ${productId} AND r.reported = false;`;
+      client.query(recommendedSqlQuery, (err, data) => {
+        if (err) {
+          res.status(500).json(err);
+        } else {
+          const recommendedData = data.rows;
+          const recommended = recommendedData.reduce((acc, cur) => {
+            acc[cur.recommend] = acc[cur.recommend] ? acc[cur.recommend] + 1 : 1;
+            return acc;
+          }, {});
+          const characteristicsSqlQuery = `select AVG(cr.value) as value, c.name, c.id from characteristic c full outer join characteristic_reviews cr on c.id = cr.characteristic_id where c.product_id = ${productId} group by c.name, c.id;`;
+          client.query(characteristicsSqlQuery, (err, data) => {
+            if (err) {
+              res.status(500).json(err);
+            } else {
+              const characteristicsData = data.rows;
+              const characteristics = characteristicsData.reduce((acc, cur) => {
+                acc[cur.name] = {'id': cur.id, 'value': cur.value}
+                return acc;
+              }, {});
+              const productMetadata = {
+                product_id: productId,
+                ratings: stringifiedRatings,
+                recommended,
+                characteristics
+              };
+              res.json(productMetadata);
+            }
+          })
+        }
+      })
     }
-    )
+  })
 });
 
 module.exports = router;
+
+

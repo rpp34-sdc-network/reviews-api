@@ -18,29 +18,29 @@ client.connect();
 
 
 // TABLE characteristic
-// async function addCharacteristicDataAsync(data) {
-//     await client.query(format('INSERT INTO characteristic(id, name) VALUES %L', data));
-// }
+async function addCharacteristicDataAsync(data) {
+    await client.query(format('INSERT INTO characteristic(id, product_id, name) VALUES %L', data));
+}
 
-// let characteristicResults = [];
+let characteristicResults = [];
 
-// fs.createReadStream('/Users/dereksouthard/Downloads/characteristics.csv')
-//   .pipe(parse({ delimeter: ',', from_line: 1 }))
-//   .on('data', (row) => {
-//     characteristicResults.push([row[0], row[2]]);
-//     if (characteristicResults.length === 100) {
-//       addCharacteristicDataAsync(characteristicResults);
-//       characteristicResults = [];
-//     }
-//   })
-//   .on('end', () => {
-//     addCharacteristicDataAsync(characteristicResults);
-//     characteristicResults = [];
-//     console.log('done!');
-//   })
-//   .on('error', (err) => {
-//     console.log('an error occured: ', err);
-//   });
+fs.createReadStream('/Users/dereksouthard/Downloads/characteristics.csv')
+  .pipe(parse({ delimeter: ',', from_line: 1 }))
+  .on('data', (row) => {
+    characteristicResults.push(row);
+    if (characteristicResults.length === 100) {
+      addCharacteristicDataAsync(characteristicResults);
+      characteristicResults = [];
+    }
+  })
+  .on('end', () => {
+    addCharacteristicDataAsync(characteristicResults);
+    characteristicResults = [];
+    console.log('done!');
+  })
+  .on('error', (err) => {
+    console.log('an error occured: ', err);
+  });
 
 
 // TABLE reviews
@@ -68,46 +68,35 @@ client.connect();
 //   console.log('an error occured: ', err);
 // });
 
-async function readChunks(readable) {
-  let theData = [];
-  let promises = [];
-  for await (const chunk of readable) {
-    theData.push(chunk);
-    if (theData.length === 1000) {
-      promises.push(addCharacteristicReviewsDataAsync(theData));
-      theData = []
-    }
-  }
-}
 
-async function addDataAsync(data, tableName, columnHeaders) {
-  await client.query(format(`INSERT INTO ${tableName} (${[...columnHeaders]}) VALUES %L`, data));
-}
+// async function addDataAsync(data, tableName, columnHeaders) {
+//   await client.query(format(`INSERT INTO ${tableName} (${[...columnHeaders]}) VALUES %L`, data));
+// }
 
 
-const addCsvDataToDb = (filename, tableName, columnHeaders) => {
+// const addCsvDataToDb = (filename, tableName, columnHeaders) => {
 
-  let tempStorage = [];
+//   let tempStorage = [];
 
-  fs.createReadStream(`/Users/dereksouthard/Downloads/${filename}`)
-    .pipe(es.split())
-    .pipe(es.map(function(row, cb) {
-      tempStorage.push(row.split(','));
-      if (tempStorage.length === 1000) {
-        addDataAsync(tempStorage, tableName, columnHeaders);
-        tempStorage = [];
-      }
-      cb(null, row);
-    }))
-    .on('end', () => {
-      addDataAsync(tempStorage, tableName, columnHeaders);
-      tempStorage = [];
-      console.log('done!');
-    })
-    .on('error', (err) => {
-      console.log('an error occured: ', err);
-    });
-}
+//   fs.createReadStream(`/Users/dereksouthard/Downloads/${filename}`)
+//     .pipe(es.split())
+//     .pipe(es.map(function(row, cb) {
+//       tempStorage.push(row.split(','));
+//       if (tempStorage.length === 1000) {
+//         addDataAsync(tempStorage, tableName, columnHeaders);
+//         tempStorage = [];
+//       }
+//       cb(null, row);
+//     }))
+//     .on('end', () => {
+//       addDataAsync(tempStorage, tableName, columnHeaders);
+//       tempStorage = [];
+//       console.log('done!');
+//     })
+//     .on('error', (err) => {
+//       console.log('an error occured: ', err);
+//     });
+// }
 
 
 // addCsvDataToDb('reviews.csv', 'review', ['id',  'product_id', 'rating', 'date', 'summary', 'body', 'recommend', 'reported', 'reviewer_name', 'reviewer_email', 'response', 'helpfulness']);
@@ -115,4 +104,4 @@ const addCsvDataToDb = (filename, tableName, columnHeaders) => {
 // addCsvDataToDb('characteristic_reviews.csv', 'characteristic_reviews', ['id', 'characteristic_id', 'review_id', 'value']);
 // addCsvDataToDb('characteristics.csv', 'characteristic', ['id', 'product_id', 'name']);
 
-Client.disconnect();
+// Client.disconnect();
