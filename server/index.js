@@ -3,7 +3,7 @@ const routes = require('./routes.js');
 
 const app = express();
 
-const port = 3000;
+const port = 8000;
 
 app.use(express.json());
 app.use('/reviews', routes);

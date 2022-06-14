@@ -26,7 +26,7 @@ router.get('/', (req, res) => {
   const count = req.query.count || 5;
   const page = req.query.page || 1;
   const sortParameter = req.query.sort;
-
+  console.log('does this fire?');
   const sqlQuery =
     `SELECT r.id AS review_id, r.rating, r.summary, r.recommend, r.response, r.body, to_timestamp(r.date / 1000)::date as date, r.reviewer_name, r.helpfulness,
       CASE WHEN count(photo.photo_url) = 0 THEN ARRAY[]::json[] ELSE array_agg(json_build_object('id', photo.id, 'url', trim('"' from photo.photo_url))) END AS photos
@@ -115,34 +115,44 @@ router.post('/', (req, res) => {
   const createReviewQuery = `INSERT INTO review(product_id, rating, date, summary, body, recommend, reported, reviewer_name, reviewer_email, response, helpfulness) VALUES (${product_id}, ${rating}, ${currentTime}, '${summary.replace("'", "''") || null}', '${body.replace("'", "''")}', ${recommend}, false, '${name.replace("'", "''")}', '${email.replace("'", "''")}', null, 0) RETURNING review.id;`
   client.query(createReviewQuery, (err, data) => {
     if (err) {
+      console.log('err1: ', err);
       res.status(500).send(err);
     } else {
       const reviewId = data.rows[0].id;
-      const photoData = photos.map((photo) => {
-        return [reviewId, `"${photo}"`];
-      });
-      const createPhotoQuery = 'INSERT INTO photo(review_id, photo_url) VALUES %L';
-      client.query(format(createPhotoQuery, photoData), (err, data) => {
+      const characteristicReviewsValues = [];
+      for (let key in characteristics) {
+        characteristicReviewsValues.push([key, reviewId, characteristics[key]]);
+      }
+      const createCharacteristicsQuery = `INSERT INTO characteristic_reviews(characteristic_id, review_id, value) VALUES %L`;
+      client.query(format(createCharacteristicsQuery, characteristicReviewsValues), (err, data) => {
         if (err) {
+          console.log('err3: ', err);
           res.status(500).send(err);
         } else {
-          const characteristicReviewsValues = [];
-          for (let key in characteristics) {
-            characteristicReviewsValues.push([key, reviewId, characteristics[key]]);
+          const photoData = photos.map((photo) => {
+            return [reviewId, `"${photo}"`];
+          });
+          console.log('photo data: ', photoData);
+          if (photoData.length) {
+            const createPhotoQuery = 'INSERT INTO photo(review_id, photo_url) VALUES %L';
+            client.query(format(createPhotoQuery, photoData), (err, data) => {
+              if (err) {
+                console.log('err2: ', err);
+                res.status(500).send(err);
+              } else {
+                res.status(201).send('review created successfully');
+              }
+            })
+          } else {
+            res.status(201).send('review created successfully');
           }
-          const createCharacteristicsQuery = `INSERT INTO characteristic_reviews(characteristic_id, review_id, value) VALUES %L`;
-          client.query(format(createCharacteristicsQuery, characteristicReviewsValues), (err, data) => {
-            if (err) {
-              res.status(500).send(err);
-            } else {
-              res.status(201).send('review created successfully');
-            }
-          })
         }
       })
     }
   })
 });
+
+
 
 
 router.put('/:review_id/helpful', (req, res) => {
